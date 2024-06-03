@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/playFragment">
+
+    <fragment
+        android:id="@+id/playFragment"
+        android:name="com.calpito.mediaplayer.ui.fragments.PlayFragment"
+        android:label="playFragment">
+        <action
+            android:id="@+id/action_playfragment_to_playlistfragement"
+            app:destination="@id/playListFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/playListFragment"
+        android:name="com.calpito.mediaplayer.ui.fragments.PlayListFragment"
+        android:label="playListFragment"
+        tools:layout="@layout/fragment_playlist" />
+</navigation>
