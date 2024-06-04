@@ -20,7 +20,6 @@ import java.util.UUID
 import javax.inject.Inject
 
 //todo in order to make songs play in the background, create a media player service
-//todo inject media player with hilt
 class RepositoryImpl @Inject constructor(
     val context: Context,
     val musicPlayer: MusicPlayerInterface,
@@ -37,28 +36,24 @@ class RepositoryImpl @Inject constructor(
     }
 
     override fun pauseMediaPlayer() {
-        //todo call the pause functionof the media player
         musicPlayer.pause()
     }
 
     override fun nextTrack() {
-        //todo call the next function of the media player
         musicPlayer.next()
     }
 
     override fun getAllSongs(): List<Song> {
-        //todo get all the songs that the media player has
         var result = musicPlayer.getAllSongs()
         return result
     }
 
     override fun setSongList(songs: List<Song>) {
-        //todo call the set list of songs of the media player
         musicPlayer.setSongList(songs)
     }
 
     override fun setPlaybackMode(mode: PlaybackMode) {
-        //todo call the set playback mode function of the media player
+        //todo method to specifically set playback mode
     }
 
     /*returns the state of the musicPlayer */
@@ -67,45 +62,11 @@ class RepositoryImpl @Inject constructor(
         return result
     }
 
-    //todo get songs from assets that way we can pull their actual file data
+    /*todo other method of grabbing songs*/
     override fun getSongsFromStorage(): List<Song> {
-        var result = arrayListOf<Song>()
-
-        //get songs wherever they are stored in memory
-        //lets create the songs here given the res raw list
-        result.add(
-            Song(
-                uuid = UUID.randomUUID().toString(),
-                title = "clair de lune",
-                durationMs = 999,
-                artist = "artist",
-                rawId = R.raw.clair_de_lune,
-                assetsDirectory = ""
-            )
-        )
-        result.add(
-            Song(
-                uuid = UUID.randomUUID().toString(),
-                title = "jazz de luxe",
-                durationMs = 999,
-                artist = "artist",
-                rawId = R.raw.jazz_de_luxe,
-                assetsDirectory = ""
-            )
-        )
-        result.add(
-            Song(
-                uuid = UUID.randomUUID().toString(),
-                title = "la paloma",
-                durationMs = 999,
-                artist = "artist",
-                rawId = R.raw.la_paloma,
-                assetsDirectory = ""
-            )
-        )
-
-        return result
+        return emptyList()
     }
+
 
     override fun nextPlayBackMode() {
         musicPlayer.nextPlayBackMode()
@@ -131,6 +92,8 @@ class RepositoryImpl @Inject constructor(
         musicPlayer.setRepeatOneMode()
     }
 
+    /*Pulls a list of all mp3s from the given assets directory, and returns their paths.
+    * Used so we can open actual mp3s for mediaplyer*/
     override suspend fun getMp3sFromAssets(): List<String> {
         val assetManager = context.assets
         val mp3Files = mutableListOf<String>()
@@ -154,6 +117,7 @@ class RepositoryImpl @Inject constructor(
         return mp3Files
     }
 
+    /*Creates Songs from mp3 files stored in assets*/
     override suspend fun getSongsFromAssets(): List<Song> {
         var result = arrayListOf<Song>()
 
