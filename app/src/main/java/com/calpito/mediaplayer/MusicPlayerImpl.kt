@@ -100,7 +100,7 @@ class MusicPlayerImpl @Inject constructor(
 
                             /*when we are done playing a song*/
                             setOnCompletionListener {
-
+                                musicPlayerData.state = MusicPlayerState.STOPPED
                                 when (musicPlayerData.playbackMode) {
                                     PlaybackMode.REPEAT_ALL -> {
                                         //play next song.  if we are the last song, play the first song
@@ -127,7 +127,7 @@ class MusicPlayerImpl @Inject constructor(
                             prepareAsync()
                         }
                     } catch (e: Exception) {
-                       e.printStackTrace()
+                        e.printStackTrace()
                         musicPlayerData.state = MusicPlayerState.IDLE
                         updateStateFlow(musicPlayerData)
                     }
