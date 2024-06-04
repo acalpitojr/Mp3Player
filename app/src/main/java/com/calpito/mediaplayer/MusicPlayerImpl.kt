@@ -60,7 +60,13 @@ class MusicPlayerImpl @Inject constructor(
             //make sure we have a current song to play
             if (musicPlayerData.currentSong == null) {
                 musicPlayerData.apply {
-                    currentSong = songList.first()
+                    //if no song is loaded, then lets choose either a random, or the first song in our list, depending on our play mode.
+                    if(musicPlayerData.playbackMode == PlaybackMode.SHUFFLE){
+                        currentSong = getRandomSong(this)
+                    } else {
+                        currentSong = songList.first()
+                    }
+
                 }
             }
 
@@ -104,16 +110,11 @@ class MusicPlayerImpl @Inject constructor(
                                 when (musicPlayerData.playbackMode) {
                                     PlaybackMode.REPEAT_ALL -> {
                                         //play next song.  if we are the last song, play the first song
-                                        next()
+                                        next() //next is smart enough to handle repeat all mode
                                     }
 
                                     PlaybackMode.SHUFFLE -> {
-                                        //play a random song.
-                                        //lets not play the same song 2 times in a row unless there is only 1 song in the list
-                                        musicPlayerData.apply {
-                                            currentSong = getRandomSong(musicPlayerData)
-                                        }
-                                        playCurrent()
+                                        next() //next is smart enough to handle shuffle
                                     }
 
                                     PlaybackMode.REPEAT_ONE -> {
