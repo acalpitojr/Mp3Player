@@ -115,7 +115,17 @@ class PlayListFragment : Fragment() {
                             }
                             is Resource.Success -> {
                                 val musicPlayerData = it.data
-                                val songItems = musicPlayerData.songList.map { song->PlayListItem.SongItem(song) }
+                                binding.tvNowPlaying.text = "Now playing: ${musicPlayerData.currentSong?.title?:""}"
+
+                                val songItems = musicPlayerData.songList.map { song->
+                                    if(musicPlayerData.currentSong == song){
+                                        //lets make this current song look special in the list
+                                        PlayListItem.CurrentSongItem(song)
+                                    } else {
+                                        //just a plain song in the list
+                                        PlayListItem.SongItem(song)
+                                    }
+                                }
                                 adapter.submitList(songItems)
                             }
                         }
@@ -151,6 +161,35 @@ class PlayListFragment : Fragment() {
 
             //function to set data to the textView
             fun bind(data: Song) {
+                tvTitle?.apply{
+                    text = data.title
+                }
+                tvArtist?.text = data.artist
+                tvLength?.text = HelperFunctions.convertMillisToMMSS(data.durationMs)
+
+
+                //click listener for this item
+                itemView.setOnClickListener {
+                    val position = adapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        println("CLICKED ITEM: ${differ.currentList[position]}, ${data.toString()}")
+                        onItemClicked(differ.currentList[position])
+                    }
+                }
+            }
+        }
+
+        /*same as above, but we can make the current song look special*/
+        inner class CurrentSongViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+            //we are going to have 1 text views to specify the Letter of the states below this header
+            val tvTitle: TextView? = itemView.findViewById(R.id.tv_title)
+            val tvArtist: TextView? = itemView.findViewById(R.id.tv_artist)
+            val tvLength: TextView? = itemView.findViewById(R.id.tv_song_length)
+
+
+            //function to set data to the textView
+            fun bind(data: Song) {
                 tvTitle?.text = data.title
                 tvArtist?.text = data.artist
                 tvLength?.text = HelperFunctions.convertMillisToMMSS(data.durationMs)
@@ -171,11 +210,16 @@ class PlayListFragment : Fragment() {
             return differ.currentList.size
         }
 
+        /*depending on what type of item we have in the list, we have a different layout*/
         override fun getItemViewType(position: Int): Int {
             var result = 0
             when(differ.currentList[position]){
                 is PlayListItem.SongItem->{
                     result = R.layout.playlist_item
+                }
+
+                is PlayListItem.CurrentSongItem->{
+                    result = R.layout.playlist_selected_item
                 }
                 //add anymore types here
                 else ->{
@@ -188,12 +232,17 @@ class PlayListFragment : Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             //inflate a view depending on what type of item we have. Since our items are typed by sealed class, we just go based on the actual item we are goign to display
-
             val viewHolder = when (viewType) {
                 R.layout.playlist_item -> {
                     val view = LayoutInflater.from(parent.context)
                         .inflate(R.layout.playlist_item, parent, false)
                     SongViewHolder(view)
+                }
+
+                R.layout.playlist_selected_item -> {
+                    val view = LayoutInflater.from(parent.context)
+                        .inflate(R.layout.playlist_selected_item, parent, false)
+                    CurrentSongViewHolder(view)
                 }
 
                else -> {
@@ -212,6 +261,12 @@ class PlayListFragment : Fragment() {
             when (holder) {
                 is SongViewHolder -> {
                     if (playListItem is PlayListItem.SongItem) { //make sure our data is correct for a SongViewHolder
+                        holder.bind(playListItem.song)
+                    }
+                }
+
+                is CurrentSongViewHolder ->{
+                    if(playListItem is PlayListItem.CurrentSongItem){
                         holder.bind(playListItem.song)
                     }
                 }
@@ -275,7 +330,13 @@ class PlayListFragment : Fragment() {
     fun listItemClicked(clickedItem: PlayListItem) {
         when(clickedItem){
             is PlayListItem.SongItem -> {
+                //when clicking on a song, select it and navigate back to the play screen
                 mainViewModel.songSelected(clickedItem.song)
+                findNavController().popBackStack()
+            }
+
+            is PlayListItem.CurrentSongItem ->{
+                //if we click on the current song, then just navigate back
                 findNavController().popBackStack()
             }
 
