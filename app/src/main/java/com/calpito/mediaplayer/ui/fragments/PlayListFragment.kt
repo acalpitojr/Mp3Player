@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.widget.ThemedSpinnerAdapter.Helper
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -21,11 +22,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.calpito.mediaplayer.R
 import com.calpito.mediaplayer.databinding.FragmentPlaylistBinding
+import com.calpito.mediaplayer.model.OneTimeEvent
 import com.calpito.mediaplayer.model.PlayListItem
+import com.calpito.mediaplayer.model.Resource
 import com.calpito.mediaplayer.model.Song
 import com.calpito.mediaplayer.utility.HelperFunctions
 import com.calpito.mediaplayer.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 // TODO: Rename parameter arguments, choose names that match
@@ -44,6 +48,7 @@ class PlayListFragment : Fragment() {
     
     private lateinit var adapter: MyAdapter
 
+    private var uiObserver: Job? = null
 
     /*set up data the fragment needs*/
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,31 +93,45 @@ class PlayListFragment : Fragment() {
 
         binding.rvMain.adapter = adapter
 
-
-
-
-
-        //now lets collect our ui states so we can update our ui as required
-        lifecycleScope.launch {
-            // This will make sure the block is cancelled and restarted according to the lifecycle changes
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.getMusicPlayerStateFlow().collect {
-                   //todo update ui with data that we have collected
-                }
-            }
-        }
-
     }
 
     private fun setObservers() {
+
+        uiObserver?.cancel() //make sure we dont have multiple observers
         //now lets collect our ui states so we can update our ui as required
-        lifecycleScope.launch {
+        uiObserver = lifecycleScope.launch {
             // This will make sure the block is cancelled and restarted according to the lifecycle changes
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.getMusicPlayerStateFlow().collect {
-                    Log.d("MEDIA_PLAYER_UPDATE", it.toString())
-                    val songItems = it.songList.map { song->PlayListItem.SongItem(song) }
-                    adapter.submitList(songItems)
+
+                //COLLECT UI STATE
+                launch {
+                    mainViewModel.uiState.collect {
+                        when(it){
+                            is Resource.Error -> {
+                                //todo show some error ui
+                            }
+                            is Resource.Loading -> {
+                                //todo show loading ui}
+                            }
+                            is Resource.Success -> {
+                                val musicPlayerData = it.data
+                                val songItems = musicPlayerData.songList.map { song->PlayListItem.SongItem(song) }
+                                adapter.submitList(songItems)
+                            }
+                        }
+                    }
+                }
+
+                //COLLECT ANY ONE TIME EVENTS
+                launch {
+                    mainViewModel.oneTimeEventSharedFlow.collect{
+                        when(it){
+                            is OneTimeEvent.ToastEvent->{
+                                //show toast with this error
+                                Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
             }
         }

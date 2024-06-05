@@ -12,6 +12,7 @@ import com.calpito.mediaplayer.model.PlaybackMode
 import com.calpito.mediaplayer.model.Song
 import com.calpito.mediaplayer.utility.HelperFunctions
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -24,7 +25,6 @@ class RepositoryImpl @Inject constructor(
     val context: Context,
     val musicPlayer: MusicPlayerInterface,
 ) : RepositoryInterface {
-
 
 
     override fun playCurrentSong() {
@@ -59,6 +59,12 @@ class RepositoryImpl @Inject constructor(
     /*returns the state of the musicPlayer */
     override fun getMusicPlayerState(): StateFlow<MusicPlayerData> {
         val result = musicPlayer.getMusicPlayerState()
+        return result
+    }
+
+    /*returns the error flow of the music player */
+    override fun getMusicPlayerErrorFLow(): SharedFlow<String> {
+        val result = musicPlayer.getMusicPlayerErrorFlow()
         return result
     }
 

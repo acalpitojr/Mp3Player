@@ -1,12 +1,14 @@
 package com.calpito.mediaplayer.ui.fragments
 
 import android.content.Context
+import android.health.connect.datatypes.units.Length
 import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -17,6 +19,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.calpito.mediaplayer.R
 import com.calpito.mediaplayer.databinding.FragmentPlayBinding
+import com.calpito.mediaplayer.model.OneTimeEvent
+import com.calpito.mediaplayer.model.Resource
 
 import com.calpito.mediaplayer.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -136,13 +140,38 @@ class PlayFragment : Fragment() {
         uiObserver = lifecycleScope.launch {
             // This will make sure the block is cancelled and restarted according to the lifecycle changes
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.getMusicPlayerStateFlow().collect {
-                    Log.d("MEDIA_PLAYER_UPDATE", it.toString())
-                    binding.tvCurrentSong.text = "${it.songIndexMap[it.currentSong]?:"?"} - ${ it.currentSong?.title ?: "" }"
-                    binding.tvArtist.text = it.currentSong?.artist?:""
-                    binding.tvState.text = "state: ${it.state.name ?: ""}"
-                    binding.tvPlaybackMode.text = "playback mode: ${ it.playbackMode.name }"
 
+                //COLLECT UI STATE
+                launch {
+                    mainViewModel.uiState.collect {
+                        when(it){
+                            is Resource.Error -> {
+                                //todo show some error ui
+                            }
+                            is Resource.Loading -> {
+                                //todo show loading ui}
+                            }
+                            is Resource.Success -> {
+                                val musicPlayerData = it.data
+                                binding.tvCurrentSong.text = "${musicPlayerData.songIndexMap[musicPlayerData.currentSong]?:"?"} - ${ musicPlayerData.currentSong?.title ?: "" }"
+                                binding.tvArtist.text = musicPlayerData.currentSong?.artist?:""
+                                binding.tvState.text = "state: ${musicPlayerData.state.name ?: ""}"
+                                binding.tvPlaybackMode.text = "playback mode: ${ musicPlayerData.playbackMode.name }"
+                            }
+                        }
+                    }
+                }
+
+                //COLLECT ANY ONE TIME EVENTS
+                launch {
+                    mainViewModel.oneTimeEventSharedFlow.collect{
+                        when(it){
+                            is OneTimeEvent.ToastEvent->{
+                                //show toast with this error
+                                Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
             }
         }

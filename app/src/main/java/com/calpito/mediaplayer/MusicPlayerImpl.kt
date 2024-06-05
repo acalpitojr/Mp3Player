@@ -9,7 +9,9 @@ import com.calpito.mediaplayer.model.MusicPlayerState
 import com.calpito.mediaplayer.model.PlaybackMode
 import com.calpito.mediaplayer.model.Song
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 import java.util.Random
@@ -27,8 +29,16 @@ class MusicPlayerImpl @Inject constructor(
     private val _state = MutableStateFlow(musicPlayerData.deepCopy())
     val state: StateFlow<MusicPlayerData> = _state
 
+    private val _errorFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errorFlow: SharedFlow<String> = _errorFlow
+
     override fun getMusicPlayerState(): StateFlow<MusicPlayerData> {
         var result = state
+        return result
+    }
+
+    override fun getMusicPlayerErrorFlow(): SharedFlow<String> {
+        var result = errorFlow
         return result
     }
 
@@ -54,6 +64,7 @@ class MusicPlayerImpl @Inject constructor(
 
     //Make sure a song is loaded, and plays the song
     override fun playCurrent() {
+
         //choose first song if we do not have a song yet
         if (musicPlayerData.songList.isNotEmpty()) {
 
@@ -66,7 +77,6 @@ class MusicPlayerImpl @Inject constructor(
                     } else {
                         currentSong = songList.first()
                     }
-
                 }
             }
 
@@ -93,6 +103,7 @@ class MusicPlayerImpl @Inject constructor(
                         val assetManager = context.assets
                         val assetFileDescriptor =
                             assetManager.openFd(musicPlayerData.currentSong?.assetsDirectory ?: "")
+
                         mediaPlayer?.release()
                         mediaPlayer = MediaPlayer().apply {
                             setDataSource(assetFileDescriptor.fileDescriptor, assetFileDescriptor.startOffset, assetFileDescriptor.length)
@@ -128,7 +139,12 @@ class MusicPlayerImpl @Inject constructor(
                             prepareAsync()
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                       e.printStackTrace()
+
+                        //emit this error
+                        _errorFlow.tryEmit(e.toString())
+
+
                         musicPlayerData.state = MusicPlayerState.IDLE
                         updateStateFlow(musicPlayerData)
                     }
@@ -166,15 +182,11 @@ class MusicPlayerImpl @Inject constructor(
                 musicPlayerData.apply {
                     currentSong = getRandomSong(musicPlayerData)
                 }
-
-
             }
 
             //Any other mode we have logic to choose the next track in the list
             else -> {
                 musicPlayerData.apply {
-
-
                     when (this.songList.size) {
                         0 -> {
                             //there are no songs to play
@@ -239,7 +251,6 @@ class MusicPlayerImpl @Inject constructor(
                     //pause does nothing if we are stopped
                 }
             }
-
         }
 
     }
@@ -302,6 +313,7 @@ class MusicPlayerImpl @Inject constructor(
         return result
     }
 
+    /*will cycle through different playback modes*/
     override fun nextPlayBackMode() {
         musicPlayerData.playbackMode =
             when (musicPlayerData.playbackMode) {
@@ -334,6 +346,8 @@ class MusicPlayerImpl @Inject constructor(
             playCurrent()
         } else {
             //song doesnt exist, we cannot play it
+            //emit this error
+            _errorFlow.tryEmit("invalid song")
         }
     }
 

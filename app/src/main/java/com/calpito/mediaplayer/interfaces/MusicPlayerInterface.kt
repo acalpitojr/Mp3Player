@@ -3,6 +3,7 @@ package com.calpito.mediaplayer.interfaces
 import android.content.Context
 import com.calpito.mediaplayer.model.MusicPlayerData
 import com.calpito.mediaplayer.model.Song
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface MusicPlayerInterface {
@@ -14,6 +15,8 @@ interface MusicPlayerInterface {
     fun getAllSongs(): List<Song>
 
     fun getMusicPlayerState(): StateFlow<MusicPlayerData>
+
+    fun getMusicPlayerErrorFlow():SharedFlow<String>
 
     fun setSongList(songs: List<Song>)
 

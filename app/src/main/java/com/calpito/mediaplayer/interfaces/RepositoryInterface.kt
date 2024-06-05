@@ -5,6 +5,7 @@ import com.calpito.mediaplayer.model.MusicPlayerData
 import com.calpito.mediaplayer.model.MusicPlayerState
 import com.calpito.mediaplayer.model.PlaybackMode
 import com.calpito.mediaplayer.model.Song
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface RepositoryInterface {
@@ -17,6 +18,8 @@ interface RepositoryInterface {
     fun setPlaybackMode(mode: PlaybackMode)
 
     fun getMusicPlayerState(): StateFlow<MusicPlayerData>
+
+    fun getMusicPlayerErrorFLow(): SharedFlow<String>
 
     fun getSongsFromStorage(): List<Song>
 
